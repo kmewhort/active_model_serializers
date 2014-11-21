@@ -85,7 +85,9 @@ end
           @_attributes << striped_attr
 
           define_method striped_attr do
-            object.read_attribute_for_serialization attr
+            val = object.read_attribute_for_serialization attr
+            val = val.to_s if val.is_a? BSON::ObjectId #KM: ensure mongo id's are output as strings
+            val
           end unless method_defined?(attr)
         end
       end
@@ -290,7 +292,7 @@ end
     alias_method :serializable_hash, :serializable_object
 
     def serialize_id(elem, association)
-      id = elem.read_attribute_for_serialization(association.embed_key)
+      id = elem.read_attribute_for_serialization(association.embed_key).to_s
       association.polymorphic? ? { id: id, type: type_name(elem) } : id
     end
 
