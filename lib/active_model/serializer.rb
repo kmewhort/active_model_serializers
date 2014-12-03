@@ -213,10 +213,21 @@ end
 
             serialized_data = association_serializer.serializable_object
             key = association.root_key
-            if hash.has_key?(key)
-              hash[key].concat(serialized_data).uniq!
+            if association.options[:polymorphic]
+              serialized_data.each do |item|
+                association_key = item[:type].to_s.demodulize.underscore.pluralize.to_sym
+                if hash.has_key?(association_key)
+                  hash[association_key].concat([item]).uniq!
+                else
+                  hash[association_key] = [item]
+                end
+              end
             else
-              hash[key] = serialized_data
+              if hash.has_key?(key)
+                hash[key].concat(serialized_data).uniq!
+              else
+                hash[key] = serialized_data
+              end
             end
           end
         end
@@ -286,7 +297,7 @@ end
       hash = attributes
       hash.merge! associations
       hash = convert_keys(hash) if key_format.present?
-      hash = { :type => type_name(@object), type_name(@object) => hash } if @polymorphic
+      #hash = { :type => type_name(@object), type_name(@object) => hash } if @polymorphic
       @wrap_in_array ? [hash] : hash
     end
     alias_method :serializable_hash, :serializable_object
